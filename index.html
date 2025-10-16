@@ -5,7 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/logo192.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#111827" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -31,8 +31,8 @@
     </script>
     
     <title>МедКарта</title>
-    <script type="module" crossorigin src="/assets/main-0dfcc4cc.js"></script>
-    <link rel="stylesheet" href="/assets/index-1a36dabb.css">
+    <script type="module" crossorigin src="/assets/main-e9825914.js"></script>
+    <link rel="stylesheet" href="/assets/index-715d3018.css">
   </head>
   <body>
     <div id="root"></div>
@@ -46,7 +46,9 @@
           return caches.keys().then(cacheNames => {
             return Promise.all(
               cacheNames.map(cacheName => {
-                if (cacheName !== 'medkarta-v3') {
+                if (cacheName !== 'medkarta-v4' && 
+                    cacheName !== 'medkarta-static-v4' && 
+                    cacheName !== 'medkarta-dynamic-v4') {
                   return caches.delete(cacheName);
                 }
               })
