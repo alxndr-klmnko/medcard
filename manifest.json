@@ -4,8 +4,8 @@
   "description": "Сканируйте медицинские документы и сохраняйте их в цифровом виде",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#111827",
-  "theme_color": "#111827",
+  "background_color": "#C7D2FE",
+  "theme_color": "#C7D2FE",
   "orientation": "portrait",
   "scope": "/",
   "icons": [

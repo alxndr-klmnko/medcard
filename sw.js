@@ -1,122 +1,127 @@
-const CACHE_NAME = 'medkarta-v4';
-const STATIC_CACHE = 'medkarta-static-v4';
-const DYNAMIC_CACHE = 'medkarta-dynamic-v4';
+// Service Worker для МедКарта (CureScroll)
+// Версия кэша
+const CACHE_VERSION = 'v1.0.0';
+const CACHE_NAME = `curescroll-${CACHE_VERSION}`;
 
-// Файлы для кэширования при установке
+// Ресурсы для кэширования
 const urlsToCache = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
+  '/favicon.ico',
   '/logo192.png',
-  '/logo512.png'
+  '/logo512.png',
+  '/manifest.json'
 ];
 
 // Установка Service Worker
 self.addEventListener('install', (event) => {
-  console.log('SW: Installing...');
+  console.log('[SW] Установка Service Worker');
+  
   event.waitUntil(
-    caches.open(STATIC_CACHE)
+    caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('SW: Caching static files');
+        console.log('[SW] Кэшируем основные ресурсы');
         return cache.addAll(urlsToCache);
       })
-      .then(() => {
-        console.log('SW: Installation complete');
-        return self.skipWaiting();
+      .catch((error) => {
+        console.error('[SW] Ошибка кэширования:', error);
       })
   );
+  
+  // Немедленная активация
+  self.skipWaiting();
 });
 
 // Активация Service Worker
 self.addEventListener('activate', (event) => {
-  console.log('SW: Activating...');
+  console.log('[SW] Активация Service Worker');
+  
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
-            console.log('SW: Deleting old cache:', cacheName);
+          if (cacheName !== CACHE_NAME) {
+            console.log('[SW] Удаляем старый кэш:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => {
-      console.log('SW: Activation complete');
-      return self.clients.claim();
+    })
+  );
+  
+  // Немедленный контроль всех клиентов
+  return self.clients.claim();
+});
+
+// Перехват запросов
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+  
+  // Игнорируем запросы к API и chrome-extension
+  if (url.protocol === 'chrome-extension:' || 
+      url.hostname.includes('googleapis.com') || 
+      url.hostname.includes('generativelanguage.googleapis.com')) {
+    return;
+  }
+  
+  // Network First для HTML (всегда свежие данные)
+  if (request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Клонируем ответ для кэша
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseToCache);
+          });
+          return response;
+        })
+        .catch(() => {
+          // Если офлайн - возвращаем из кэша
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Возвращаем офлайн страницу
+            return caches.match('/index.html');
+          });
+        })
+    );
+    return;
+  }
+  
+  // Cache First для статики (JS, CSS, изображения)
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      
+      return fetch(request).then((response) => {
+        // Не кэшируем не-успешные ответы
+        if (!response || response.status !== 200 || response.type === 'error') {
+          return response;
+        }
+        
+        // Клонируем ответ для кэша
+        const responseToCache = response.clone();
+        
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(request, responseToCache);
+        });
+        
+        return response;
+      });
     })
   );
 });
 
-// Обработка запросов
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Пропускаем Chrome extension запросы
-  if (url.protocol === 'chrome-extension:') {
-    return;
-  }
-
-  // Стратегия: Cache First для статики, Network First для API
-  if (request.destination === 'document') {
-    // HTML страницы - Network First с fallback на index.html
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Кэшируем успешные ответы
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(DYNAMIC_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Fallback на index.html для SPA
-          return caches.match('/index.html');
-        })
-    );
-  } else if (request.destination === 'script' || 
-             request.destination === 'style' || 
-             request.destination === 'image') {
-    // Статические ресурсы - Cache First
-    event.respondWith(
-      caches.match(request)
-        .then((response) => {
-          if (response) {
-            return response;
-          }
-          return fetch(request)
-            .then((response) => {
-              // Кэшируем новые ресурсы
-              if (response.status === 200) {
-                const responseClone = response.clone();
-                caches.open(DYNAMIC_CACHE).then((cache) => {
-                  cache.put(request, responseClone);
-                });
-              }
-              return response;
-            });
-        })
-    );
-  } else {
-    // Остальные запросы - Network First
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(DYNAMIC_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          return caches.match(request);
-        })
-    );
+// Обработка сообщений
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
+
+console.log('[SW] Service Worker загружен');

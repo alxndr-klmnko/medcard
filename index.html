@@ -6,9 +6,10 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/logo192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#111827" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="theme-color" content="#E0E7FF" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="description" content="Сканируйте медицинские документы и сохраняйте их в цифровом виде" />
     <link rel="manifest" href="/manifest.json" />
     
@@ -24,15 +25,23 @@
         const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         const theme = savedTheme || systemTheme;
         
+        // Обновляем theme-color для статус-бара
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        const metaStatusBarStyle = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
         if (theme === 'dark') {
           document.documentElement.classList.add('dark');
+          if (metaThemeColor) metaThemeColor.setAttribute('content', '#000000'); // полностью черный
+          if (metaStatusBarStyle) metaStatusBarStyle.setAttribute('content', 'black');
+        } else {
+          if (metaThemeColor) metaThemeColor.setAttribute('content', '#E0E7FF'); // светлый, как фон (indigo-100)
+          if (metaStatusBarStyle) metaStatusBarStyle.setAttribute('content', 'default');
         }
       })();
     </script>
     
     <title>МедКарта</title>
-    <script type="module" crossorigin src="/assets/main-e9825914.js"></script>
-    <link rel="stylesheet" href="/assets/index-715d3018.css">
+    <script type="module" crossorigin src="/assets/main-b71005c9.js"></script>
+    <link rel="stylesheet" href="/assets/index-8a4f4bbb.css">
   </head>
   <body>
     <div id="root"></div>
