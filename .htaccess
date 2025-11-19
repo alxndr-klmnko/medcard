@@ -1,4 +1,4 @@
-# Правильные MIME типы для статических файлов
+# Правильные MIME типы для статических файлов (Apache/LiteSpeed)
 <IfModule mod_mime.c>
     AddType text/css .css
     AddType application/javascript .js
@@ -13,6 +13,20 @@
     AddType application/x-font-woff2 .woff2
 </IfModule>
 
+# Принудительная установка MIME типов через заголовки
+<IfModule mod_headers.c>
+    <FilesMatch "\.css$">
+        Header set Content-Type "text/css; charset=utf-8"
+    </FilesMatch>
+    <FilesMatch "\.js$">
+        Header set Content-Type "application/javascript; charset=utf-8"
+    </FilesMatch>
+    <FilesMatch "\.json$">
+        Header set Content-Type "application/json; charset=utf-8"
+    </FilesMatch>
+</IfModule>
+
+
 # Кэширование статических файлов
 <IfModule mod_expires.c>
     ExpiresActive On
@@ -23,10 +37,20 @@
     ExpiresByType image/svg+xml "access plus 1 year"
 </IfModule>
 
-# SPA роутинг - все запросы на index.html
+# SPA роутинг - все запросы на index.html (кроме статических файлов)
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
+    
+    # Не трогаем статические файлы
+    RewriteCond %{REQUEST_URI} \.(css|js|json|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|webp|webmanifest)$ [NC]
+    RewriteRule . - [L]
+    
+    # Не трогаем папку assets
+    RewriteCond %{REQUEST_URI} ^/assets/ [NC]
+    RewriteRule . - [L]
+    
+    # Остальные запросы на index.html
     RewriteRule ^index\.html$ - [L]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
