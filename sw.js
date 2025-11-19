@@ -1,6 +1,6 @@
 // Service Worker для МедКарта (CureScroll)
 // Версия кэша
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.0.1';
 const CACHE_NAME = `curescroll-${CACHE_VERSION}`;
 
 // Ресурсы для кэширования

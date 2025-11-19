@@ -8,6 +8,7 @@
   "theme_color": "#C7D2FE",
   "orientation": "portrait",
   "scope": "/",
+  "version": "1.0.1",
   "icons": [
     {
       "src": "logo192.png",

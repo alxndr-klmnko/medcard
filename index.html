@@ -40,8 +40,8 @@
     </script>
     
     <title>МедКарта</title>
-    <script type="module" crossorigin src="/assets/main-8a73a7e8.js"></script>
-    <link rel="stylesheet" href="/assets/index-b5628001.css">
+    <script type="module" crossorigin src="/assets/main-2aa3c49d.js"></script>
+    <link rel="stylesheet" href="/assets/index-5ec1fadb.css">
   </head>
   <body>
     <div id="root"></div>
@@ -55,9 +55,8 @@
           return caches.keys().then(cacheNames => {
             return Promise.all(
               cacheNames.map(cacheName => {
-                if (cacheName !== 'medkarta-v4' && 
-                    cacheName !== 'medkarta-static-v4' && 
-                    cacheName !== 'medkarta-dynamic-v4') {
+                // Удаляем все старые версии кэша
+                if (!cacheName.startsWith('curescroll-v1.0.1')) {
                   return caches.delete(cacheName);
                 }
               })
