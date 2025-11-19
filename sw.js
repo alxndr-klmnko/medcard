@@ -1,6 +1,6 @@
 // Service Worker для МедКарта (CureScroll)
 // Версия кэша
-const CACHE_VERSION = 'v1.0.1';
+const CACHE_VERSION = 'v1.0.2';
 const CACHE_NAME = `curescroll-${CACHE_VERSION}`;
 
 // Ресурсы для кэширования
@@ -91,7 +91,41 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Cache First для статики (JS, CSS, изображения)
+  // Network First для статики (JS, CSS) - всегда свежие с правильными MIME типами
+  const isStaticAsset = url.pathname.startsWith('/assets/') || 
+                        url.pathname.match(/\.(css|js|json)$/);
+  
+  if (isStaticAsset) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Проверяем MIME тип перед кэшированием
+          const contentType = response.headers.get('content-type') || '';
+          const isValidMime = 
+            (url.pathname.endsWith('.css') && contentType.includes('text/css')) ||
+            (url.pathname.endsWith('.js') && contentType.includes('application/javascript')) ||
+            (url.pathname.endsWith('.json') && contentType.includes('application/json')) ||
+            (!url.pathname.endsWith('.css') && !url.pathname.endsWith('.js') && !url.pathname.endsWith('.json'));
+          
+          // Кэшируем только если MIME тип правильный
+          if (response.status === 200 && isValidMime) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          
+          return response;
+        })
+        .catch(() => {
+          // Если офлайн - возвращаем из кэша
+          return caches.match(request);
+        })
+    );
+    return;
+  }
+  
+  // Cache First для изображений и других статических файлов
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {

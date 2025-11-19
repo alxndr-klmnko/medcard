@@ -50,20 +50,41 @@
       // Регистрация Service Worker для PWA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(() => {
-          // Очистка старого кэша
-          return caches.keys().then(cacheNames => {
-            return Promise.all(
-              cacheNames.map(cacheName => {
-                // Удаляем все старые версии кэша
-                if (!cacheName.startsWith('curescroll-v1.0.1')) {
-                  return caches.delete(cacheName);
+          navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+            .then(registration => {
+              console.log('SW registered:', registration);
+              
+              // Принудительное обновление при наличии новой версии
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                if (newWorker) {
+                  newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                      // Новая версия доступна - перезагружаем страницу
+                      window.location.reload();
+                    }
+                  });
                 }
-              })
-            );
-          });
-        })
-            .then(registration => console.log('SW registered:', registration))
+              });
+              
+              // Проверяем обновления каждые 60 секунд
+              setInterval(() => {
+                registration.update();
+              }, 60000);
+              
+              // Очистка старого кэша
+              return caches.keys().then(cacheNames => {
+                return Promise.all(
+                  cacheNames.map(cacheName => {
+                    // Удаляем все старые версии кэша
+                    if (!cacheName.startsWith('curescroll-v1.0.2')) {
+                      console.log('Удаляем старый кэш:', cacheName);
+                      return caches.delete(cacheName);
+                    }
+                  })
+                );
+              });
+            })
             .catch(error => console.log('SW registration failed:', error));
         });
       }
